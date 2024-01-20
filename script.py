@@ -10,6 +10,10 @@ fileCombined = []
 fileC = []
 fileH = []
 projectDir = "/mnt/c/users/emily/afdecomp/af"
+# If there's c_keyframe data we need to include c_keyframe.h
+ckfDataExists: bool = False
+ckfTypes = ["ckf_je", "ckf_bs", "ckf_ckcb", "ckf_kn", "ckf_c", "ckf_ds", "ckf_ba"]
+notArrayTypes = ["ckf_bs", "ckf_ba"]
 
 with open('input.csv', newline='') as csvfile:
     # Create two iterators so we can check both the current and next line
@@ -112,7 +116,13 @@ with open('input.csv', newline='') as csvfile:
         if fileType == "ckf_ba":
             dataType = "BaseAnimationR"
 
-        HLines.append(f"extern {dataType} {fileName}[];")
+        if not ckfDataExists and fileType in ckfTypes:
+            ckfDataExists = True
+
+        if fileType in notArrayTypes:
+            HLines.append(f"extern {dataType} {fileName};")
+        else:
+            HLines.append(f"extern {dataType} {fileName}[];")
 
     fileCombined.append("--------------------------------------------------------------------------------")
     fileCombined.append("symbol_addrs_assets.txt")
@@ -154,6 +164,8 @@ with open('input.csv', newline='') as csvfile:
     fileH.append(f"#define OBJECT_{segmentName.upper()}_H")
     fileH.append("")
     fileH.append('#include "gbi.h"')
+    if ckfDataExists:
+        fileH.append('#include "c_keyframe.h"')
     fileH.append("")
     HLines = "\n".join(HLines)
     fileH.append(HLines)
