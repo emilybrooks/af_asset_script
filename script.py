@@ -13,7 +13,10 @@ projectDir = "/mnt/c/users/emily/afdecomp/af"
 # If there's c_keyframe data we need to include c_keyframe.h
 ckfDataExists: bool = False
 ckfTypes = ["ckf_je", "ckf_bs", "ckf_ckcb", "ckf_kn", "ckf_c", "ckf_ds", "ckf_ba"]
-notArrayTypes = ["ckf_bs", "ckf_ba"]
+# Same with evw_anime.h
+evwDataExists: bool = False
+evwTypes = ["evw_scroll", "evw_colprim", "evw_colenv", "evw_colreg", "evw_texanime", "evw_textable", "evw_animeptn", "evw_data"]
+notArrayTypes = ["ckf_bs", "ckf_ba", "evw_scroll", "evw_colprim", "evw_colenv", "evw_colreg", "evw_texanime", "evw_textable"]
 
 with open('input.csv', newline='') as csvfile:
     # Create two iterators so we can check both the current and next line
@@ -58,7 +61,7 @@ with open('input.csv', newline='') as csvfile:
         fileExtension: str = None
         if fileType == "vtx":
             fileExtension = ".vtx"
-        if fileType == "gfx":
+        if fileType == "af_gfx":
             fileExtension = ".gfx"
         if fileType == "af_palette":
             fileExtension = ".palette"
@@ -68,6 +71,8 @@ with open('input.csv', newline='') as csvfile:
             fileExtension = ".i4"
         if fileType == "af_i8":
             fileExtension = ".i8"
+        if fileType == "af_ia8":
+            fileExtension = ".ia8"
         if fileType == "ckf_je":
             fileExtension = ""
         if fileType == "ckf_bs":
@@ -82,6 +87,22 @@ with open('input.csv', newline='') as csvfile:
             fileExtension = ""
         if fileType == "ckf_ba":
             fileExtension = ""
+        if fileType == "evw_scroll":
+            fileExtension = ""
+        if fileType == "evw_colprim":
+            fileExtension = ""
+        if fileType == "evw_colenv":
+            fileExtension = ""
+        if fileType == "evw_colreg":
+            fileExtension = ""
+        if fileType == "evw_texanime":
+            fileExtension = ""
+        if fileType == "evw_textable":
+            fileExtension = ""
+        if fileType == "evw_animeptn":
+            fileExtension = ""
+        if fileType == "evw_data":
+            fileExtension = ""
 
         if subFolder:
             CLines.append(f'#include "assets/jp/{fileDir}/{subFolder}/{fileName}{fileExtension}.inc.c"')
@@ -91,7 +112,7 @@ with open('input.csv', newline='') as csvfile:
         dataType: str = None
         if fileType == "vtx":
             dataType = "Vtx"
-        if fileType == "gfx":
+        if fileType == "af_gfx":
             dataType = "Gfx"
         if fileType == "af_palette":
             dataType = "unsigned short"
@@ -100,6 +121,8 @@ with open('input.csv', newline='') as csvfile:
         if fileType == "af_i4":
             dataType = "unsigned char"
         if fileType == "af_i8":
+            dataType = "unsigned char"
+        if fileType == "af_ia8":
             dataType = "unsigned char"
         if fileType == "ckf_je":
             dataType = "JointElemR"
@@ -115,9 +138,28 @@ with open('input.csv', newline='') as csvfile:
             dataType = "Keyframe"
         if fileType == "ckf_ba":
             dataType = "BaseAnimationR"
+        if fileType == "evw_scroll":
+            dataType = "EvwAnimeScroll"
+        if fileType == "evw_colprim":
+            dataType = "EvwAnimeColPrim"
+        if fileType == "evw_colenv":
+            dataType = "EvwAnimeColEnv"
+        if fileType == "evw_colreg":
+            dataType = "EvwAnimeColReg"
+        if fileType == "evw_texanime":
+            dataType = "EvwAnimeTexAnime"
+        if fileType == "evw_textable":
+            dataType = "void*"
+        if fileType == "evw_animeptn":
+            dataType = "u8"
+        if fileType == "evw_data":
+            dataType = "EvwAnimeData"
 
         if not ckfDataExists and fileType in ckfTypes:
             ckfDataExists = True
+        
+        if not evwDataExists and fileType in evwTypes:
+            evwDataExists = True
 
         if fileType in notArrayTypes:
             HLines.append(f"extern {dataType} {fileName};")
@@ -166,6 +208,8 @@ with open('input.csv', newline='') as csvfile:
     fileH.append('#include "gbi.h"')
     if ckfDataExists:
         fileH.append('#include "c_keyframe.h"')
+    if evwDataExists:
+        fileH.append('#include "evw_anime.h"')
     fileH.append("")
     HLines = "\n".join(HLines)
     fileH.append(HLines)
