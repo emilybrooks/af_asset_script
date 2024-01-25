@@ -16,7 +16,7 @@ ckfTypes = ["ckf_je", "ckf_bs", "ckf_ckcb", "ckf_kn", "ckf_c", "ckf_ds", "ckf_ba
 # Same with evw_anime.h
 evwDataExists: bool = False
 evwTypes = ["evw_scroll", "evw_colprim", "evw_colenv", "evw_colreg", "evw_texanime", "evw_textable", "evw_animeptn", "evw_data"]
-notArrayTypes = ["ckf_bs", "ckf_ba", "evw_scroll", "evw_colprim", "evw_colenv", "evw_colreg", "evw_texanime", "evw_textable"]
+notArrayTypes = ["ckf_bs", "ckf_ba", "evw_colreg", "evw_texanime", "evw_textable"]
 
 with open('input.csv', newline='') as csvfile:
     # Create two iterators so we can check both the current and next line
@@ -196,14 +196,21 @@ with open('input.csv', newline='') as csvfile:
     fileCombined.append(f"  - [0x{romEnd:X}]")
     fileCombined.append("")
 
-    fileC.append(f'#include "{segmentName}.h"')
+    if subFolder:
+        fileC.append(f'#include "{subFolder}.h"')
+    else:
+        fileC.append(f'#include "{segmentName}.h"')
     fileC.append("")
     CLines = "\n".join(CLines)
     fileC.append(CLines)
     fileC.append("")
 
-    fileH.append(f"#ifndef OBJECT_{segmentName.upper()}_H")
-    fileH.append(f"#define OBJECT_{segmentName.upper()}_H")
+    if subFolder:
+        fileH.append(f"#ifndef OBJECT_{subFolder.upper()}_H")
+        fileH.append(f"#define OBJECT_{subFolder.upper()}_H")
+    else:
+        fileH.append(f"#ifndef OBJECT_{segmentName.upper()}_H")
+        fileH.append(f"#define OBJECT_{segmentName.upper()}_H")
     fileH.append("")
     fileH.append('#include "gbi.h"')
     if ckfDataExists:
@@ -232,10 +239,19 @@ try:
 except:
     pass
 
-fileC = "\n".join(fileC)
-with open(f"{path}/{segmentName}.c", "w") as outputFile:
-    outputFile.write(fileC)
+if subFolder:
+    fileC = "\n".join(fileC)
+    with open(f"{path}/{subFolder}.c", "w") as outputFile:
+        outputFile.write(fileC)
 
-fileH = "\n".join(fileH)
-with open(f"{path}/{segmentName}.h", "w") as outputFile:
-    outputFile.write(fileH)
+    fileH = "\n".join(fileH)
+    with open(f"{path}/{subFolder}.h", "w") as outputFile:
+        outputFile.write(fileH)
+else:
+    fileC = "\n".join(fileC)
+    with open(f"{path}/{segmentName}.c", "w") as outputFile:
+        outputFile.write(fileC)
+
+    fileH = "\n".join(fileH)
+    with open(f"{path}/{segmentName}.h", "w") as outputFile:
+        outputFile.write(fileH)
