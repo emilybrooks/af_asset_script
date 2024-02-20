@@ -58,72 +58,41 @@ with open('input.csv', newline='') as csvfile:
         else:
             assetsYamlLines.append(f"          - [0x{rom:X}, {fileType}, {fileName}]")
 
-        fileExtension: str = None
+        if not ckfDataExists and fileType in ckfTypes:
+            ckfDataExists = True
+        if not evwDataExists and fileType in evwTypes:
+            evwDataExists = True
+            
+        fileExtension: str = ""
+        dataType: str = None
+        # Image types get extracted as data only, so the C file will have the struct instead
+        generateStruct: bool = False
+
         if fileType == "vtx":
             fileExtension = ".vtx"
-        if fileType == "af_gfx":
-            fileExtension = ".gfx"
-        if fileType == "af_palette":
-            fileExtension = ".palette"
-        if fileType == "af_ci4":
-            fileExtension = ".ci4"
-        if fileType == "af_i4":
-            fileExtension = ".i4"
-        if fileType == "af_i8":
-            fileExtension = ".i8"
-        if fileType == "af_ia8":
-            fileExtension = ".ia8"
-        if fileType == "ckf_je":
-            fileExtension = ""
-        if fileType == "ckf_bs":
-            fileExtension = ""
-        if fileType == "ckf_ckcb":
-            fileExtension = ""
-        if fileType == "ckf_kn":
-            fileExtension = ""
-        if fileType == "ckf_c":
-            fileExtension = ""
-        if fileType == "ckf_ds":
-            fileExtension = ""
-        if fileType == "ckf_ba":
-            fileExtension = ""
-        if fileType == "evw_scroll":
-            fileExtension = ""
-        if fileType == "evw_colprim":
-            fileExtension = ""
-        if fileType == "evw_colenv":
-            fileExtension = ""
-        if fileType == "evw_colreg":
-            fileExtension = ""
-        if fileType == "evw_texanime":
-            fileExtension = ""
-        if fileType == "evw_textable":
-            fileExtension = ""
-        if fileType == "evw_animeptn":
-            fileExtension = ""
-        if fileType == "evw_data":
-            fileExtension = ""
-
-        if subFolder:
-            CLines.append(f'#include "assets/jp/{fileDir}/{subFolder}/{fileName}{fileExtension}.inc.c"')
-        else:
-            CLines.append(f'#include "assets/jp/{fileDir}/{fileName}{fileExtension}.inc.c"')
-
-        dataType: str = None
-        if fileType == "vtx":
             dataType = "Vtx"
         if fileType == "af_gfx":
+            fileExtension = ".gfx"
             dataType = "Gfx"
         if fileType == "af_palette":
-            dataType = "unsigned short"
-        if fileType == "af_ci4":
-            dataType = "unsigned char"
-        if fileType == "af_i4":
-            dataType = "unsigned char"
-        if fileType == "af_i8":
-            dataType = "unsigned char"
-        if fileType == "af_ia8":
-            dataType = "unsigned char"
+            fileExtension = ".palette"
+            dataType = "u16"
+        if fileType == "ci4":
+            fileExtension = ".ci4"
+            dataType = "u8"
+            generateStruct = True
+        if fileType == "i4":
+            fileExtension = ".i4"
+            dataType = "u8"
+            generateStruct = True
+        if fileType == "i8":
+            fileExtension = ".i8"
+            dataType = "u8"
+            generateStruct = True
+        if fileType == "ia8":
+            fileExtension = ".ia8"
+            dataType = "u8"
+            generateStruct = True
         if fileType == "ckf_je":
             dataType = "JointElemR"
         if fileType == "ckf_bs":
@@ -155,11 +124,14 @@ with open('input.csv', newline='') as csvfile:
         if fileType == "evw_data":
             dataType = "EvwAnimeData"
 
-        if not ckfDataExists and fileType in ckfTypes:
-            ckfDataExists = True
-        
-        if not evwDataExists and fileType in evwTypes:
-            evwDataExists = True
+        if generateStruct:
+            CLines.append(f"{dataType} {fileName}[] = {{")
+        if subFolder:
+            CLines.append(f'#include "assets/jp/{fileDir}/{subFolder}/{fileName}{fileExtension}.inc.c"')
+        else:
+            CLines.append(f'#include "assets/jp/{fileDir}/{fileName}{fileExtension}.inc.c"')
+        if generateStruct:
+            CLines.append("};")
 
         if fileType in notArrayTypes:
             HLines.append(f"extern {dataType} {fileName};")
@@ -176,24 +148,32 @@ with open('input.csv', newline='') as csvfile:
     fileCombined.append("--------------------------------------------------------------------------------")
     fileCombined.append("assets.yaml")
     fileCombined.append("--------------------------------------------------------------------------------")
-    fileCombined.append(f"  - name: {segmentName}")
-    fileCombined.append(f"    dir: {fileDir}")
-    fileCombined.append(f"    type: code")
-    fileCombined.append(f"    start: 0x{romStart:X}")
-    fileCombined.append(f"    vram: 0x{segmentNum:02X}000000")
-    fileCombined.append(f"    exclusive_ram_id: segment_{segmentNum:02X}")
-    fileCombined.append(f"    compress: True")
-    fileCombined.append(f"    align: 0x1000")
-    fileCombined.append(f"    symbol_name_format: $VRAM_$ROM")
-    fileCombined.append(f"    subsegments:")
-    fileCombined.append(f"      - [auto, c, {segmentName}]")
-    fileCombined.append(f"      - start: 0x{romStart:X}")
-    fileCombined.append(f"        type: .data")
-    fileCombined.append(f"        name: {segmentName}")
-    fileCombined.append(f"        subsegments:")
+    if subFolder:
+        fileCombined.append(f"      - [auto, c, {subFolder}/{subFolder}]")
+        fileCombined.append(f"      - start: 0xXXXXXXXX")
+        fileCombined.append(f"        type: .data")
+        fileCombined.append(f"        name: {subFolder}/{subFolder}")
+        fileCombined.append(f"        subsegments:")
+    else:
+        fileCombined.append(f"  - name: {segmentName}")
+        fileCombined.append(f"    dir: {fileDir}")
+        fileCombined.append(f"    type: code")
+        fileCombined.append(f"    start: 0x{romStart:X}")
+        fileCombined.append(f"    vram: 0x{segmentNum:02X}000000")
+        fileCombined.append(f"    exclusive_ram_id: segment_{segmentNum:02X}")
+        fileCombined.append(f"    compress: True")
+        fileCombined.append(f"    align: 0x1000")
+        fileCombined.append(f"    symbol_name_format: $VRAM_$ROM")
+        fileCombined.append(f"    subsegments:")
+        fileCombined.append(f"      - [auto, c, {segmentName}]")
+        fileCombined.append(f"      - start: 0x{romStart:X}")
+        fileCombined.append(f"        type: .data")
+        fileCombined.append(f"        name: {segmentName}")
+        fileCombined.append(f"        subsegments:")
     assetsYamlLines = "\n".join(assetsYamlLines)
     fileCombined.append(assetsYamlLines)
-    fileCombined.append(f"  - [0x{romEnd:X}]")
+    if not subFolder:
+        fileCombined.append(f"  - [0x{romEnd:X}]")
     fileCombined.append("")
 
     if subFolder:
